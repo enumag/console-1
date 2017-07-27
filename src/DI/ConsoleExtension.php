@@ -3,6 +3,7 @@
 namespace Contributte\Console\DI;
 
 use Contributte\Console\Application;
+use Contributte\Console\Command\ProxyCommand;
 use Contributte\Console\Helper\ContainerHelper;
 use Nette\DI\Compiler;
 use Nette\DI\CompilerExtension;
@@ -30,6 +31,7 @@ class ConsoleExtension extends CompilerExtension
 		'helpers' => [
 			ContainerHelper::class,
 		],
+		'proxy' => FALSE,
 	];
 
 	/**
@@ -111,7 +113,12 @@ class ConsoleExtension extends CompilerExtension
 		// Register all commands
 		$commands = $builder->findByType(Command::class);
 		foreach ($commands as $name => $command) {
-			$application->addSetup('add', [$command]);
+			$application->addSetup('add', [
+				new Statement(ProxyCommand::class, [
+					$command->getEntity(),
+					new Statement('function() { return ?;}', [$command]),
+				]),
+			]);
 		}
 	}
 
